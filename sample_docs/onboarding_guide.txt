@@ -1,0 +1,28 @@
+Project Onboarding Guide
+
+Required Access:
+- Snowflake Data Platform
+- GitHub Repository
+- CI/CD Platform
+- Enterprise Documentation Portal
+
+Key Roles:
+- Product Owner
+- Technical Lead
+- Data Architect
+- Business Analyst
+- Data Engineer
+
+Important Repositories:
+- customer_analytics
+- transaction_monitoring
+- regulatory_reporting
+
+Project Workflow:
+1. Review architecture
+2. Review source systems
+3. Review mapping specifications
+4. Develop data pipelines
+5. Unit testing
+6. Integration testing
+7. Production deployment

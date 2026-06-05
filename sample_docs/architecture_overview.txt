@@ -1,0 +1,36 @@
+Project Name:
+Enterprise Banking Analytics Platform
+
+Purpose:
+Provide a centralized data platform for customer analytics, transaction monitoring, financial reporting, and risk management.
+
+Source Systems:
+- Core Banking System
+- Customer Information System
+- Payment Processing Platform
+- Credit Card Platform
+- General Ledger System
+
+Technology Stack:
+- Snowflake
+- Python
+- GitHub
+- CI/CD Pipeline
+- Power BI
+
+Data Flow:
+Source Systems
+→ Landing Zone
+→ Standardized Zone
+→ Curated Zone
+→ Analytics Layer
+
+Key Deliverables:
+- Customer 360
+- Transaction Analytics
+- Regulatory Reporting
+- Risk Dashboards
+- Financial KPIs
+
+Deployment Model:
+All pipelines are deployed through enterprise CI/CD processes and monitored through centralized observability platforms.
