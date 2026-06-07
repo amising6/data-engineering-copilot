@@ -1,99 +1,210 @@
 import streamlit as st
-from openai import OpenAI
-from pypdf import PdfReader
 import pandas as pd
 
 st.set_page_config(
-    page_title="Project Intelligence Copilot",
-    page_icon="🧠",
+    page_title="DE Copilot - STTM Factory",
+    page_icon="🛠️",
     layout="wide"
 )
 
-client = OpenAI(api_key=st.secrets["OPENAI_API_KEY"])
-
-st.title("🧠 Project Intelligence Copilot")
-st.subheader("From weeks of searching to answers in seconds")
-
-st.markdown("""
-Upload project artifacts such as architecture documents, onboarding guides, STTMs, runbooks, and access checklists.
-Then ask project onboarding questions in plain English.
-""")
-
-uploaded_files = st.file_uploader(
-    "Upload Project Documents",
-    type=["txt", "pdf", "xlsx"],
-    accept_multiple_files=True
+st.title("🛠️ DE Copilot - Enterprise STTM Factory")
+st.subheader(
+    "Transform Retail STTM into Snowflake DDL, SQL, Data Dictionary and Technical Specifications"
 )
 
-context = ""
+# --------------------------------------------------
+# Helper Functions
+# --------------------------------------------------
 
-if uploaded_files:
-    st.success(f"{len(uploaded_files)} document(s) uploaded successfully.")
+def generate_ddl(df):
 
-    for file in uploaded_files:
-        st.write(f"📄 {file.name}")
+    ddl = "CREATE OR REPLACE TABLE DIM_CUSTOMER (\n"
 
-        if file.name.endswith(".txt"):
-            context += file.read().decode("utf-8") + "\n\n"
+    cols = []
 
-        elif file.name.endswith(".pdf"):
-            reader = PdfReader(file)
-            for page in reader.pages:
-                page_text = page.extract_text()
-                if page_text:
-                    context += page_text + "\n\n"
+    for _, row in df.iterrows():
 
-        elif file.name.endswith(".xlsx"):
-            excel = pd.ExcelFile(file)
-            for sheet in excel.sheet_names:
-                df = pd.read_excel(file, sheet_name=sheet)
-                context += f"\nSheet: {sheet}\n"
-                context += df.to_string(index=False)
-                context += "\n\n"
+        col_name = row["Target_Column"]
+        data_type = row["Data_Type"]
 
-st.divider()
+        if str(row["Nullable"]).upper() == "N":
+            cols.append(f"    {col_name} {data_type} NOT NULL")
+        else:
+            cols.append(f"    {col_name} {data_type}")
 
-question = st.text_input(
-    "Ask a project onboarding question",
-    placeholder="Example: What source systems are involved?"
+    ddl += ",\n".join(cols)
+    ddl += "\n);"
+
+    return ddl
+
+
+def generate_sql(df):
+
+    sql = "INSERT INTO DIM_CUSTOMER\nSELECT\n"
+
+    transformations = []
+
+    for _, row in df.iterrows():
+
+        source_col = row["Source_Column"]
+        target_col = row["Target_Column"]
+
+        rule = str(row["Transformation_Rule"]).lower()
+
+        if "trim whitespace" in rule:
+            transformations.append(
+                f"    TRIM({source_col}) AS {target_col}"
+            )
+
+        elif "lowercase" in rule:
+            transformations.append(
+                f"    LOWER(TRIM({source_col})) AS {target_col}"
+            )
+
+        elif "uppercase" in rule:
+            transformations.append(
+                f"    UPPER({source_col}) AS {target_col}"
+            )
+
+        elif "convert to date" in rule:
+            transformations.append(
+                f"    TO_DATE({source_col}) AS {target_col}"
+            )
+
+        elif "current timestamp" in rule:
+            transformations.append(
+                f"    CURRENT_TIMESTAMP() AS {target_col}"
+            )
+
+        else:
+            transformations.append(
+                f"    {source_col} AS {target_col}"
+            )
+
+    sql += ",\n".join(transformations)
+
+    sql += "\nFROM SRC_CUSTOMER;"
+
+    return sql
+
+
+def generate_dictionary(df):
+
+    dictionary = []
+
+    dictionary.append(
+        "| Target Column | Data Type | Business Definition |"
+    )
+
+    dictionary.append(
+        "|---------------|-----------|--------------------|"
+    )
+
+    for _, row in df.iterrows():
+
+        dictionary.append(
+            f"| {row['Target_Column']} | "
+            f"{row['Data_Type']} | "
+            f"{row['Business_Definition']} |"
+        )
+
+    return "\n".join(dictionary)
+
+
+def generate_tech_spec(df):
+
+    output = "# Technical Mapping Specification\n\n"
+
+    for _, row in df.iterrows():
+
+        output += f"## {row['Target_Column']}\n\n"
+
+        output += f"- Source Table: {row['Source_Table']}\n"
+        output += f"- Source Column: {row['Source_Column']}\n"
+        output += f"- Target Table: {row['Target_Table']}\n"
+        output += f"- Target Column: {row['Target_Column']}\n"
+        output += f"- Data Type: {row['Data_Type']}\n"
+        output += f"- Nullable: {row['Nullable']}\n"
+        output += f"- Business Definition: {row['Business_Definition']}\n"
+        output += f"- Transformation Rule: {row['Transformation_Rule']}\n"
+        output += f"- DQ Rule: {row['DQ_Rule']}\n\n"
+
+    return output
+
+
+# --------------------------------------------------
+# Upload
+# --------------------------------------------------
+
+uploaded_file = st.file_uploader(
+    "Upload Retail Enterprise STTM",
+    type=["csv"]
 )
 
-if st.button("Ask Copilot"):
-    if not uploaded_files:
-        st.warning("Please upload project documents first.")
-    elif not question.strip():
-        st.warning("Please enter a question.")
-    else:
-        prompt = f"""
-You are Project Intelligence Copilot for enterprise data engineering onboarding.
+if uploaded_file:
 
-Use only the project documentation below to answer the question.
-If the answer is not available in the documents, say that clearly.
+    df = pd.read_csv(uploaded_file)
 
-PROJECT DOCUMENTATION:
-{context[:20000]}
+    st.success("STTM Uploaded Successfully")
 
-USER QUESTION:
-{question}
+    st.write("### Uploaded STTM")
 
-Answer using this format:
+    st.dataframe(df)
 
-## Direct Answer
+    st.divider()
 
-## Relevant Systems
+    if st.button("🏗️ Generate Data Product Assets"):
 
-## Relevant Tables / Artifacts
+        ddl = generate_ddl(df)
+        sql = generate_sql(df)
+        dictionary = generate_dictionary(df)
+        tech_spec = generate_tech_spec(df)
 
-## Business Rules / Logic
-
-## Recommended Next Steps
-"""
-
-        response = client.chat.completions.create(
-            model="gpt-4.1",
-            messages=[
-                {"role": "user", "content": prompt}
+        tab1, tab2, tab3, tab4 = st.tabs(
+            [
+                "Snowflake DDL",
+                "Snowflake SQL",
+                "Data Dictionary",
+                "Technical Spec"
             ]
         )
 
-        st.markdown(response.choices[0].message.content)
+        with tab1:
+            st.code(ddl, language="sql")
+
+            st.download_button(
+                "Download DDL",
+                ddl,
+                file_name="snowflake_ddl.sql"
+            )
+
+        with tab2:
+            st.code(sql, language="sql")
+
+            st.download_button(
+                "Download SQL",
+                sql,
+                file_name="snowflake_sql.sql"
+            )
+
+        with tab3:
+            st.markdown(dictionary)
+
+            st.download_button(
+                "Download Data Dictionary",
+                dictionary,
+                file_name="data_dictionary.md"
+            )
+
+        with tab4:
+            st.markdown(tech_spec)
+
+            st.download_button(
+                "Download Technical Spec",
+                tech_spec,
+                file_name="technical_spec.md"
+            )
+
+        st.success(
+            "✅ Data Product Assets Generated Successfully"
+        )

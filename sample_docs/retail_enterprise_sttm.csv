@@ -1,0 +1,10 @@
+Source_Table,Source_Column,Target_Table,Target_Column,Data_Type,Nullable,Primary_Key_Flag,Audit_Flag,Business_Definition,Transformation_Rule,DQ_Rule
+SRC_CUSTOMER,CUSTOMER_ID,DIM_CUSTOMER,CUSTOMER_ID,VARCHAR(50),N,Y,N,Unique customer identifier,Direct Mapping,NOT NULL
+SRC_CUSTOMER,FIRST_NAME,DIM_CUSTOMER,FIRST_NAME,VARCHAR(100),Y,N,N,Customer first name,Trim whitespace,
+SRC_CUSTOMER,LAST_NAME,DIM_CUSTOMER,LAST_NAME,VARCHAR(100),Y,N,N,Customer last name,Trim whitespace,
+SRC_CUSTOMER,EMAIL_ADDRESS,DIM_CUSTOMER,EMAIL_ADDRESS,VARCHAR(200),Y,N,N,Customer email address,Lowercase and trim,VALID EMAIL
+SRC_CUSTOMER,PHONE_NUMBER,DIM_CUSTOMER,PHONE_NUMBER,VARCHAR(30),Y,N,N,Customer phone number,Remove spaces and hyphens,
+SRC_CUSTOMER,CREATED_DATE,DIM_CUSTOMER,CUSTOMER_CREATED_DATE,DATE,N,N,N,Customer registration date,Convert to DATE,VALID DATE
+SRC_CUSTOMER,LOYALTY_STATUS,DIM_CUSTOMER,LOYALTY_STATUS,VARCHAR(50),Y,N,N,Customer loyalty program status,Uppercase value,VALID CODE
+SRC_CUSTOMER,SOURCE_SYSTEM,DIM_CUSTOMER,SOURCE_SYSTEM,VARCHAR(50),N,N,Y,Source application name,Direct Mapping,NOT NULL
+SYSTEM,CURRENT_TIMESTAMP,DIM_CUSTOMER,ROW_INSERT_TS,TIMESTAMP_NTZ,N,N,Y,Record insert timestamp,System Generated Current Timestamp,NOT NULL
